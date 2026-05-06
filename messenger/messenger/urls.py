@@ -25,6 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', lambda request: redirect('users:login')),
     path('', include('users.urls')),
+    path('chats/', include('chat.urls')),
 
 ]
 
