@@ -3,17 +3,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from django.contrib.auth import get_user_model
+from django.db import models
 from .models import Chat, Message, ChatMember
 import json
 
-# Это уже не нужно, так как используем кастомного пользователя
-# class SignUpView(CreateView):
-#     form_class = UserCreationForm
-#     success_url = reverse_lazy('login')
-#     template_name = 'registration/signup.html'
+User = get_user_model()
 
 @login_required
 def chat_list(request):
@@ -21,12 +16,48 @@ def chat_list(request):
     return render(request, 'chat/chat_list.html', {'chats': user_chats})
 
 @login_required
+def create_chat(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        chat = Chat.objects.create(name=name)
+        ChatMember.objects.create(chat=chat, user=request.user, role='admin')
+        return redirect('chat:room', chat_id=chat.id)
+
+    return render(request, 'chat/create_chat.html')
+
+
+@login_required
+def add_member(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+
+    # только админ может добавлять
+    if not ChatMember.objects.filter(chat=chat, user=request.user, role='admin').exists():
+        return HttpResponseForbidden("Only admin can add members")
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        try:
+            user = User.objects.get(username=username)
+            ChatMember.objects.get_or_create(chat=chat, user=user, defaults={'role': 'member'})
+            return redirect('chat:room', chat_id=chat.id)
+        except User.DoesNotExist:
+            return render(request, 'chat/add_member.html', {'chat': chat, 'error': 'User not found'})
+
+    return render(request, 'chat/add_member.html', {'chat': chat})
+
+
+@login_required
 def chat_room(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
     if not ChatMember.objects.filter(chat=chat, user=request.user).exists():
         return HttpResponseForbidden("You are not in this chat.")
-    return render(request, 'chat/room.html', {'chat': chat})
 
+    is_admin = ChatMember.objects.filter(chat=chat, user=request.user, role='admin').exists()
+
+    return render(request, 'chat/room.html', {
+        'chat': chat,
+        'is_admin': is_admin
+    })
 @login_required
 @require_http_methods(["GET"])
 def get_messages(request, chat_id):

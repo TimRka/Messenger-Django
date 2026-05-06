@@ -5,12 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Messenger{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    :root {
+        --dark-cherry: #801100;
+        --dragon: #B62203;
+        --bishop: #D73502;
+        --cadmium: #FC6400;
+        --fire-orange: #FF7500;
+        --golden: #FAC000;
+    }
+
+    body {
+        background-color: white;
+        color: #333;
+    }
+
+    .navbar {
+        background: linear-gradient(135deg, var(--dark-cherry) 0%, var(--dragon) 100%);
+    }
+
+    .navbar-brand {
+        font-weight: bold;
+        color: var(--golden) !important;
+    }
+
+    .btn-primary {
+        background-color: var(--cadmium);
+        border-color: var(--cadmium);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--fire-orange);
+        border-color: var(--fire-orange);
+    }
+
+    .btn-success {
+        background-color: var(--dragon);
+        border-color: var(--dragon);
+    }
+
+    .btn-success:hover {
+        background-color: var(--bishop);
+        border-color: var(--bishop);
+    }
+
+    footer {
+        background-color: #f8f9fa !important;
+        color: #6c757d !important;
+    }
+
+    .message-mine {
+        background-color: var(--bishop) !important;  /* #D73502 */
+        color: #ffffff !important;
+    }
+
+    .message-other {
+        background-color: #333333 !important;
+        color: #e0e0e0 !important;
+    }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
+
 <body class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #B62203 0%, #D73502 100%);">
         <div class="container">
-            <a class="navbar-brand" href="/">Flame</a>
+            <a class="navbar-brand" href="{% url 'chat:list' %}">Flame</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>

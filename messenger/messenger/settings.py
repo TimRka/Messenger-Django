@@ -120,5 +120,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/chats/'
 LOGOUT_REDIRECT_URL = '/'
+
+#from cryptography.fernet import Fernet
+#key = Fernet.generate_key()
+#print(key.decode())
+
+ENCRYPTION_KEY = b'AfB7zPCYpRobgIUXqN3pQ8URfZKDuODXbeOx0enwWwc='

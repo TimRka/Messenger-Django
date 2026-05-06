@@ -1,9 +1,10 @@
 from django.db import models
-from django.conf import settings  # Вместо прямого импорта User
+from django.conf import settings
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
+from cryptography.fernet import Fernet
 
-# ИСПОЛЬЗУЙ settings.AUTH_USER_MODEL вместо User
+
 class Chat(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -29,9 +30,24 @@ class ChatMember(models.Model):
 class Message(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    text = models.TextField(
-        validators=[MinLengthValidator(1), MaxLengthValidator(2000)]
-    )
+    _text = models.TextField(db_column='text')
+
+    @property
+    def text(self):
+        """Дешифровка при чтении"""
+        if not self._text:
+            return ''
+        f = Fernet(settings.ENCRYPTION_KEY)
+        return f.decrypt(self._text.encode()).decode()
+
+    @text.setter
+    def text(self, value):
+        """Шифровка при сохранении"""
+        if value:
+            f = Fernet(settings.ENCRYPTION_KEY)
+            self._text = f.encrypt(value.encode()).decode()
+        else:
+            self._text = ''
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

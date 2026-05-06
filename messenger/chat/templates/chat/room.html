@@ -1,35 +1,81 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>{{ chat.name }}</h1>
-<div id="messages"></div>
-<input type="text" id="message-input">
-<button onclick="sendMessage()">Отправить</button>
+{% if is_admin %}
+    <a href="{% url 'chat:add_member' chat.id %}" class="btn btn-sm btn-secondary mb-2">+ Добавить участника</a>
+{% endif %}
+<div class="card" style="height: 70vh;">
+    <div class="card-body overflow-auto" id="messages" style="display: flex; flex-direction: column; gap: 10px;">
+    </div>
+    <div class="card-footer">
+        <div class="input-group">
+            <input type="text" class="form-control" id="message-input" placeholder="Введите сообщение..." onkeypress="handleKeyPress(event)">
+            <button class="btn btn-primary" onclick="sendMessage()">Отправить</button>
+        </div>
+    </div>
+</div>
 
 <script>
-function loadMessages() {
-    fetch('{% url "chat:messages" chat.id %}')
-        .then(r => r.json())
-        .then(data => {
-            const div = document.getElementById('messages');
-            div.innerHTML = data.messages.map(m => 
-                `<b>${m.author}:</b> ${m.text}<br>`
-            ).join('');
+    const currentUser = "{{ request.user.username }}";
+    let lastMessageId = 0;
+
+    function formatTime(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+    }
+
+    function renderMessage(msg) {
+        const isMine = msg.author === currentUser;
+        const div = document.createElement('div');
+        div.className = `d-flex ${isMine ? 'justify-content-end' : 'justify-content-start'}`;
+
+        div.innerHTML = `
+            <div class="${isMine ? 'message-mine' : 'message-other'} rounded p-2" style="max-width: 60%;">
+                ${!isMine ? `<div class="fw-bold small">${msg.author}</div>` : ''}
+                <div>${msg.text}</div>
+                <div class="small text-end mt-1">${formatTime(msg.created_at)}</div>
+            </div>
+        `;
+        return div;
+    }
+
+    function loadMessages() {
+        fetch(`{% url 'chat:messages' chat.id %}?after=${lastMessageId}`)
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('messages');
+                data.messages.forEach(msg => {
+                    container.appendChild(renderMessage(msg));
+                    if (msg.id > lastMessageId) lastMessageId = msg.id;
+                });
+                if (data.messages.length) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('message-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        fetch(`{% url 'chat:send' chat.id %}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({text: text})
+        }).then(() => {
+            input.value = '';
+            loadMessages();
         });
-}
+    }
 
-function sendMessage() {
-    const input = document.getElementById('message-input');
-    fetch('{% url "chat:send" chat.id %}', {
-        method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'},
-        body: JSON.stringify({text: input.value})
-    }).then(() => {
-        input.value = '';
-        loadMessages();
-    });
-}
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') sendMessage();
+    }
 
-setInterval(loadMessages, 2000);
-loadMessages();
+    setInterval(loadMessages, 2000);
+    loadMessages();
 </script>
 {% endblock %}

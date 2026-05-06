@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Создать чат</h2>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="name" class="form-control mb-2" placeholder="Название чата" required>
+    <button type="submit" class="btn btn-primary">Создать</button>
+</form>
+{% endblock %}

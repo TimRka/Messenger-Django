@@ -1,9 +1,27 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Мои чаты</h1>
-<ul>
-    {% for chat in chats %}
-        <li><a href="{% url 'chat:room' chat.id %}">{{ chat.name }}</a></li>
-    {% endfor %}
-</ul>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Мои чаты</h1>
+        <a href="{% url 'chat:create' %}" class="btn btn-sm btn-success">+ Новый чат</a>
+    </div>
+
+    {% if chats %}
+        <div class="list-group">
+            {% for chat in chats %}
+                <a href="{% url 'chat:room' chat.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ chat.name }}</strong>
+                        <small class="text-muted d-block">Создан: {{ chat.created_at|date:"d.m.Y" }}</small>
+                    </div>
+                    <span class="badge bg-secondary rounded-pill">{{ chat.chatmember_set.count }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <p class="text-muted">У вас нет чатов</p>
+            <a href="{% url 'chat:create' %}" class="btn btn-sm btn-primary">Создать чат</a>
+        </div>
+    {% endif %}
 {% endblock %}
