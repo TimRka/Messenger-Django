@@ -23,6 +23,6 @@ class CustomUser(AbstractUser):
         verbose_name='Логин'
     )
 
-
-    USERNAME_FIELD = 'username'
+    # Поля для параметров входа
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
