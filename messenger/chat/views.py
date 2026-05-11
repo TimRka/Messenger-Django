@@ -4,9 +4,10 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.contrib import messages
 from .models import Chat, Message, ChatMember
 import json
+import re  # Добавлен импорт re
 
 User = get_user_model()
 
@@ -26,6 +27,8 @@ def create_chat(request):
     return render(request, 'chat/create_chat.html')
 
 
+# Обновите функцию add_member в chat/views.py
+
 @login_required
 def add_member(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
@@ -34,16 +37,85 @@ def add_member(request, chat_id):
     if not ChatMember.objects.filter(chat=chat, user=request.user, role='admin').exists():
         return HttpResponseForbidden("Only admin can add members")
 
+    # Получаем текущих участников чата
+    current_members = ChatMember.objects.filter(chat=chat).values_list('user_id', flat=True)
+    chat_members = User.objects.filter(id__in=current_members)  # Исправлено: CustomUser -> User
+
+    # Обработка поиска
+    search_query = request.GET.get('search', '').strip()
+    search_results = []
+
+    if search_query:
+        # Получаем всех пользователей, кроме текущего и уже добавленных
+        all_users = User.objects.exclude(id=request.user.id).exclude(id__in=current_members)  # Исправлено: CustomUser -> User
+
+        is_email_search = '@' in search_query and '.' in search_query
+        is_phone_search = any(char.isdigit() for char in search_query) and len(re.sub(r'\D', '', search_query)) >= 10
+        phone_digits = re.sub(r'\D', '', search_query) if is_phone_search else None
+
+        for user in all_users:
+            include_in_results = False
+
+            # Поиск по username (всегда показываем)
+            if search_query.lower() in user.username.lower():
+                include_in_results = True
+
+            # Поиск по email (только если email виден для админа)
+            if not include_in_results and is_email_search and user.email:
+                if search_query.lower() in user.email.lower():
+                    # Админ может видеть email, если пользователь разрешил
+                    if user.can_see_email(request.user):
+                        include_in_results = True
+
+            # Поиск по телефону (только если телефон виден для админа)
+            if not include_in_results and is_phone_search and user.phone:
+                user_phone_digits = re.sub(r'\D', '', user.phone)
+                if phone_digits in user_phone_digits or user_phone_digits in phone_digits:
+                    # Админ может видеть телефон, если пользователь разрешил
+                    if user.can_see_phone(request.user):
+                        include_in_results = True
+
+            if include_in_results:
+                # Добавляем флаги приватности
+                user.can_see_email_flag = user.can_see_email(request.user)
+                user.can_see_phone_flag = user.can_see_phone(request.user)
+                search_results.append(user)
+
+        # Ограничиваем результаты 20 пользователями
+        search_results = search_results[:20]
+
+    # Обработка добавления пользователя
     if request.method == 'POST':
         username = request.POST.get('username')
-        try:
-            user = User.objects.get(username=username)
-            ChatMember.objects.get_or_create(chat=chat, user=user, defaults={'role': 'member'})
-            return redirect('chat:room', chat_id=chat.id)
-        except User.DoesNotExist:
-            return render(request, 'chat/add_member.html', {'chat': chat, 'error': 'User not found'})
+        if username:
+            try:
+                user = User.objects.get(username=username)  # Исправлено: CustomUser -> User
+                # Проверяем, не является ли пользователь уже участником
+                if ChatMember.objects.filter(chat=chat, user=user).exists():
+                    return render(request, 'chat/add_member.html', {
+                        'chat': chat,
+                        'error': f'Пользователь {username} уже в чате',
+                        'search_query': search_query,
+                        'search_results': search_results,
+                        'chat_members': chat_members
+                    })
+                ChatMember.objects.create(chat=chat, user=user, role='member')
+                return redirect('chat:room', chat_id=chat.id)
+            except User.DoesNotExist:  # Исправлено: CustomUser -> User
+                return render(request, 'chat/add_member.html', {
+                    'chat': chat,
+                    'error': f'Пользователь с username "{username}" не найден',
+                    'search_query': search_query,
+                    'search_results': search_results,
+                    'chat_members': chat_members
+                })
 
-    return render(request, 'chat/add_member.html', {'chat': chat})
+    return render(request, 'chat/add_member.html', {
+        'chat': chat,
+        'search_query': search_query,
+        'search_results': search_results,
+        'chat_members': chat_members
+    })
 
 
 @login_required
@@ -58,6 +130,7 @@ def chat_room(request, chat_id):
         'chat': chat,
         'is_admin': is_admin
     })
+
 @login_required
 @require_http_methods(["GET"])
 def get_messages(request, chat_id):
@@ -110,3 +183,40 @@ def send_message(request, chat_id):
             'created_at': msg.created_at.isoformat(),
         }
     })
+
+
+@login_required
+def create_direct_chat(request, user_id):
+    """Создание личного чата с пользователем"""
+    try:
+        other_user = get_object_or_404(User, id=user_id)
+
+        # Проверяем, существует ли уже чат между этими пользователями
+        # Получаем все чаты текущего пользователя
+        user_chats = ChatMember.objects.filter(user=request.user).values_list('chat_id', flat=True)
+
+        # Проверяем, есть ли среди них чат с другим пользователем
+        existing = ChatMember.objects.filter(
+            chat_id__in=user_chats,
+            user=other_user
+        ).select_related('chat').first()
+
+        if existing:
+            chat_id = existing.chat_id
+        else:
+            # Создаем новый чат
+            chat_name = f"{request.user.username} & {other_user.username}"
+            chat = Chat.objects.create(name=chat_name)
+
+            # Добавляем обоих пользователей в чат
+            ChatMember.objects.create(chat=chat, user=request.user, role='admin')
+            ChatMember.objects.create(chat=chat, user=other_user, role='member')
+            chat_id = chat.id
+
+        # Перенаправляем на страницу чата
+        return redirect('chat:room', chat_id=chat_id)
+
+    except Exception as e:
+        # В случае ошибки возвращаемся к поиску с сообщением об ошибке
+        messages.error(request, f'Ошибка при создании чата: {str(e)}')
+        return redirect('users:user_search')

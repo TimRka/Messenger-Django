@@ -1,36 +1,31 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Поиск пользователей{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="mb-0">Добавить участника в чат "{{ chat.name }}"</h3>
+                    <h4>Поиск пользователей</h4>
                 </div>
                 <div class="card-body">
-                    {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                    {% endif %}
-
-                    {% if success %}
-                        <div class="alert alert-success">{{ success }}</div>
-                    {% endif %}
-
-                    <!-- Форма поиска -->
-                    <form method="get" action="{% url 'chat:add_member' chat.id %}" class="mb-4">
+                    <form method="get" action="{% url 'users:user_search' %}" class="mb-4">
                         <div class="input-group">
                             <input type="text"
-                                   name="search"
-                                   class="form-control"
-                                   placeholder="Поиск по username, email или телефону..."
+                                   name="q"
+                                   class="form-control form-control-lg"
+                                   placeholder="Поиск по email, телефону или имени пользователя..."
                                    value="{{ search_query }}"
                                    autofocus>
-                            <button type="submit" class="btn btn-outline-primary">🔍 Поиск</button>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Найти
+                            </button>
                         </div>
                         <small class="form-text text-muted mt-2">
-                            Введите username, email или номер телефона пользователя
+                            Введите email, номер телефона или имя пользователя
                         </small>
                     </form>
 
@@ -38,57 +33,56 @@
                         <hr>
                         <h5>Результаты поиска: "{{ search_query }}"</h5>
 
-                        {% if search_results %}
+                        {% if users %}
                             <div class="list-group mt-3">
-                                {% for user in search_results %}
+                                {% for user in users %}
                                     <div class="list-group-item">
                                         <div class="row align-items-center">
                                             <div class="col-auto">
                                                 {% if user.avatar %}
                                                     <img src="{{ user.avatar.url }}" alt="{{ user.username }}"
-                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                                         style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
                                                 {% else %}
                                                     <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center"
-                                                         style="width: 40px; height: 40px;">
-                                                        <span class="text-white">{{ user.username|first|upper }}</span>
+                                                         style="width: 50px; height: 50px;">
+                                                        <span class="text-white h5 mb-0">{{ user.username|first|upper }}</span>
                                                     </div>
                                                 {% endif %}
                                             </div>
                                             <div class="col">
-                                                <strong>{{ user.username }}</strong>
-                                                <div class="small text-muted mt-1">
-                                                    <!-- Email показываем только если разрешено -->
+                                                <h6 class="mb-1">{{ user.username }}</h6>
+                                                <small class="text-muted">
+                                                    <!-- Email отображается только если разрешено -->
                                                     {% if user.can_see_email_flag %}
-                                                        {{ user.email }}
+                                                        Email: {{ user.email }}
                                                         {% if user.email_privacy != 'everyone' %}
                                                             <span class="badge bg-info ms-1"></span>
                                                         {% endif %}
+                                                        <br>
                                                     {% else %}
-                                                        <span class="text-muted">скрыт</span>
+                                                        Email: <span class="text-muted">скрыт</span><br>
                                                     {% endif %}
 
-                                                    <!-- Телефон показываем только если разрешено и указан -->
+                                                    <!-- Телефон отображается только если разрешено и указан -->
                                                     {% if user.can_see_phone_flag and user.phone %}
-                                                        <br>{{ user.phone }}
+                                                        Телефон: {{ user.phone }}
                                                         {% if user.phone_privacy != 'everyone' %}
                                                             <span class="badge bg-info ms-1"></span>
                                                         {% endif %}
                                                     {% elif user.phone %}
-                                                        <br><span class="text-muted">скрыт</span>
+                                                        Телефон: <span class="text-muted">скрыт</span>
+                                                    {% else %}
+                                                        Телефон: <span class="text-muted">не указан</span>
                                                     {% endif %}
-                                                </div>
+                                                </small>
                                             </div>
                                             <div class="col-auto">
-                                                {% if user in chat_members %}
-                                                    <span class="badge bg-secondary">Уже в чате</span>
+                                                {% if user != request.user %}
+                                                    <a href="{% url 'chat:create_direct' user.id %}" class="btn btn-sm btn-primary">
+                                                        Написать сообщение
+                                                    </a>
                                                 {% else %}
-                                                    <form method="post" action="{% url 'chat:add_member' chat.id %}" style="display: inline;">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="username" value="{{ user.username }}">
-                                                        <button type="submit" class="btn btn-sm btn-success">
-                                                            + Добавить
-                                                        </button>
-                                                    </form>
+                                                    <span class="badge bg-secondary">Это вы</span>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -97,7 +91,7 @@
                             </div>
                         {% else %}
                             <div class="alert alert-info mt-3">
-                                Пользователи не найдены. Попробуйте другой поисковый запрос.
+                                Пользователи с таким email, телефоном или именем не найдены.
                             </div>
                         {% endif %}
                     {% endif %}

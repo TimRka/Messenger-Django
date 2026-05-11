@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Профиль {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="Аватар" class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                            <span class="text-white display-4">{{ user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                    <h3>{{ user.username }}</h3>
+
+                    {% if request.user == user %}
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary mt-3">Редактировать профиль</a>
+                    {% else %}
+                        <a href="{% url 'chat:create_direct' user.id %}" class="btn btn-primary mt-3">Написать сообщение</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Информация о пользователе</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th style="width: 35%">Username:</th>
+                            <td>{{ user.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>
+                                {% if request.user == user %}
+                                    {{ user.email }}
+                                    {% if user.email_privacy != 'everyone' %}
+                                        <span class="badge bg-info ms-2">
+                                            {% if user.email_privacy == 'members_only' %}
+                                                Только участники чатов
+                                            {% else %}
+                                                Скрыто
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {% with can_see_email=user.can_see_email_flag %}
+                                        {% if can_see_email %}
+                                            {{ user.email }}
+                                            {% if user.email_privacy != 'everyone' %}
+                                                <span class="badge bg-info ms-2">
+                                                    {% if user.email_privacy == 'members_only' %}
+                                                        Только участники чатов
+                                                    {% else %}
+                                                        Скрыто
+                                                    {% endif %}
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Скрыто пользователем</span>
+                                            <span class="badge bg-secondary ms-2">Приватно</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Телефон:</th>
+                            <td>
+                                {% if request.user == user %}
+                                    {{ user.phone|default:"Не указан" }}
+                                    {% if user.phone_privacy != 'everyone' and user.phone %}
+                                        <span class="badge bg-info ms-2">
+                                            {% if user.phone_privacy == 'members_only' %}
+                                                Только участники чатов
+                                            {% else %}
+                                                Скрыто
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {% with can_see_phone=user.can_see_phone_flag %}
+                                        {% if can_see_phone and user.phone %}
+                                            {{ user.phone }}
+                                            {% if user.phone_privacy != 'everyone' %}
+                                                <span class="badge bg-info ms-2">
+                                                    {% if user.phone_privacy == 'members_only' %}
+                                                        Только участники чатов
+                                                    {% else %}
+                                                        Скрыто
+                                                    {% endif %}
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">
+                                                {% if not user.phone %}
+                                                    Не указан
+                                                {% else %}
+                                                    Скрыто пользователем
+                                                {% endif %}
+                                            </span>
+                                            {% if user.phone %}
+                                                <span class="badge bg-secondary ms-2">Приватно</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>О себе:</th>
+                            <td>{{ user.bio|default:"Не указано"|linebreaks }}</td>
+                        </tr>
+                        <tr>
+                            <th>Дата рождения:</th>
+                            <td>{{ user.birth_date|default:"Не указана"|date:"d.m.Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Дата регистрации:</th>
+                            <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Был в сети:</th>
+                            <td>{{ user.last_online|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                    </table>
+
+                    <!-- Отображаем настройки приватности текущего пользователя -->
+                    {% if request.user == user %}
+                        <div class="alert alert-info mt-3">
+                            <strong>ℹВаши настройки приватности:</strong><br>
+                            Email: <strong>{{ user.get_email_privacy_display }}</strong><br>
+                            Телефон: <strong>{{ user.get_phone_privacy_display }}</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

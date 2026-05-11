@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактирование профиля{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Редактирование профиля</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Username*</label>
+                            <input type="text" name="username" id="id_username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" value="{{ form.username.value|default:'' }}">
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.username.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">150 символов или менее. Буквы, цифры и @/./+/-/_ только.</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Email*</label>
+                            <input type="email" name="email" id="id_email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" value="{{ form.email.value|default:'' }}">
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_phone" class="form-label">Телефон</label>
+                            <input type="text" name="phone" id="id_phone" class="form-control {% if form.phone.errors %}is-invalid{% endif %}" value="{{ form.phone.value|default:'' }}" placeholder="+7XXXXXXXXXX">
+                            {% if form.phone.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.phone.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Формат: +7XXXXXXXXXX (10 цифр)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_birth_date" class="form-label">Дата рождения</label>
+                            <input type="date" name="birth_date" id="id_birth_date" class="form-control {% if form.birth_date.errors %}is-invalid{% endif %}" value="{{ form.birth_date.value|default:''|date:'Y-m-d' }}">
+                            {% if form.birth_date.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.birth_date.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_bio" class="form-label">О себе</label>
+                            <textarea name="bio" id="id_bio" rows="4" class="form-control {% if form.bio.errors %}is-invalid{% endif %}">{{ form.bio.value|default:'' }}</textarea>
+                            {% if form.bio.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.bio.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_avatar" class="form-label">Аватар</label>
+                            {% if user.avatar %}
+                                <div class="mb-2">
+                                    <img src="{{ user.avatar.url }}" alt="Текущий аватар" style="width: 100px; height: 100px; object-fit: cover;" class="rounded">
+                                    <div class="form-check mt-1">
+                                        <input type="checkbox" name="avatar-clear" id="avatar-clear_id" class="form-check-input">
+                                        <label for="avatar-clear_id" class="form-check-label">Удалить текущий аватар</label>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <input type="file" name="avatar" id="id_avatar" class="form-control {% if form.avatar.errors %}is-invalid{% endif %}" accept="image/*">
+                            {% if form.avatar.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.avatar.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Рекомендуемый размер: 500x500px. Поддерживаются JPG, PNG, GIF.</small>
+                        </div>
+                        
+                        <!-- Настройки приватности -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Настройки приватности</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="id_email_privacy" class="form-label">Кто может видеть ваш email</label>
+                                    <select name="email_privacy" id="id_email_privacy" class="form-select">
+                                        <option value="everyone" {% if form.email_privacy.value == 'everyone' %}selected{% endif %}>Все пользователи</option>
+                                        <option value="members_only" {% if form.email_privacy.value == 'members_only' %}selected{% endif %}>Только участники чатов</option>
+                                        <option value="no_one" {% if form.email_privacy.value == 'no_one' %}selected{% endif %}>Никто (кроме администраторов)</option>
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        <strong>Все пользователи</strong> - email увидят все, включая незарегистрированных<br>
+                                        <strong>Только участники чатов</strong> - только те, с кем у вас есть общие чаты<br>
+                                        <strong>Никто</strong> - email видите только вы и администраторы
+                                    </small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_phone_privacy" class="form-label">Кто может видеть ваш номер телефона</label>
+                                    <select name="phone_privacy" id="id_phone_privacy" class="form-select">
+                                        <option value="everyone" {% if form.phone_privacy.value == 'everyone' %}selected{% endif %}>Все пользователи</option>
+                                        <option value="members_only" {% if form.phone_privacy.value == 'members_only' %}selected{% endif %}>Только участники чатов</option>
+                                        <option value="no_one" {% if form.phone_privacy.value == 'no_one' %}selected{% endif %}>Никто (кроме администраторов)</option>
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        <strong>Все пользователи</strong> - номер телефона увидят все, включая незарегистрированных<br>
+                                        <strong>Только участники чатов</strong> - только те, с кем у вас есть общие чаты<br>
+                                        <strong>Никто</strong> - номер телефона видите только вы и администраторы
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'users:profile' %}" class="btn btn-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

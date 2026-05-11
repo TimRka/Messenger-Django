@@ -30,6 +30,26 @@ class CustomUser(AbstractUser):
     )
     last_online = models.DateTimeField(auto_now=True, verbose_name='Был в сети')
 
+    # Настройки приватности
+    PRIVACY_CHOICES = [
+        ('everyone', 'Все пользователи'),
+        ('members_only', 'Только участники чатов'),
+        ('no_one', 'Никто (кроме администраторов)'),
+    ]
+
+    email_privacy = models.CharField(
+        max_length=20,
+        choices=PRIVACY_CHOICES,
+        default='members_only',
+        verbose_name='Кто видит email'
+    )
+
+    phone_privacy = models.CharField(
+        max_length=20,
+        choices=PRIVACY_CHOICES,
+        default='members_only',
+        verbose_name='Кто видит телефон'
+    )
 
     # Поля для параметров входа
     USERNAME_FIELD = 'username'
@@ -37,3 +57,32 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def can_see_email(self, viewer):
+        """Проверяет, может ли пользователь viewer видеть email"""
+        if viewer == self or viewer.is_superuser or viewer.is_staff:
+            return True
+
+        if self.email_privacy == 'everyone':
+            return True
+        elif self.email_privacy == 'members_only':
+            # Проверяем, есть ли у viewer общие чаты с этим пользователем
+            from chat.models import ChatMember
+            user_chats = ChatMember.objects.filter(user=viewer).values_list('chat_id', flat=True)
+            return ChatMember.objects.filter(chat_id__in=user_chats, user=self).exists()
+        else:  # no_one
+            return False
+
+    def can_see_phone(self, viewer):
+        """Проверяет, может ли пользователь viewer видеть телефон"""
+        if viewer == self or viewer.is_superuser or viewer.is_staff:
+            return True
+
+        if self.phone_privacy == 'everyone':
+            return True
+        elif self.phone_privacy == 'members_only':
+            from chat.models import ChatMember
+            user_chats = ChatMember.objects.filter(user=viewer).values_list('chat_id', flat=True)
+            return ChatMember.objects.filter(chat_id__in=user_chats, user=self).exists()
+        else:  # no_one
+            return False
