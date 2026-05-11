@@ -26,9 +26,7 @@ class CustomUserChangeForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Убираем лишние поля
         self.fields.pop('password')
-        # Добавляем placeholder'ы и атрибуты
         self.fields['username'].widget.attrs.update({'class': 'form-control'})
         self.fields['email'].widget.attrs.update({'class': 'form-control'})
         self.fields['phone'].widget.attrs.update({'class': 'form-control', 'placeholder': '+7XXXXXXXXXX'})
@@ -48,7 +46,6 @@ class CustomUserChangeForm(UserChangeForm):
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
         if phone:
-            # Удаляем все символы кроме цифр
             import re
             digits = re.sub(r'\D', '', phone)
             if len(digits) == 10:

@@ -30,7 +30,6 @@ class CustomUser(AbstractUser):
     )
     last_online = models.DateTimeField(auto_now=True, verbose_name='Был в сети')
 
-    # Настройки приватности
     PRIVACY_CHOICES = [
         ('everyone', 'Все пользователи'),
         ('members_only', 'Только участники чатов'),
@@ -59,22 +58,19 @@ class CustomUser(AbstractUser):
         return self.username
 
     def can_see_email(self, viewer):
-        """Проверяет, может ли пользователь viewer видеть email"""
         if viewer == self or viewer.is_superuser or viewer.is_staff:
             return True
 
         if self.email_privacy == 'everyone':
             return True
         elif self.email_privacy == 'members_only':
-            # Проверяем, есть ли у viewer общие чаты с этим пользователем
             from chat.models import ChatMember
             user_chats = ChatMember.objects.filter(user=viewer).values_list('chat_id', flat=True)
             return ChatMember.objects.filter(chat_id__in=user_chats, user=self).exists()
-        else:  # no_one
+        else:
             return False
 
     def can_see_phone(self, viewer):
-        """Проверяет, может ли пользователь viewer видеть телефон"""
         if viewer == self or viewer.is_superuser or viewer.is_staff:
             return True
 
@@ -84,5 +80,5 @@ class CustomUser(AbstractUser):
             from chat.models import ChatMember
             user_chats = ChatMember.objects.filter(user=viewer).values_list('chat_id', flat=True)
             return ChatMember.objects.filter(chat_id__in=user_chats, user=self).exists()
-        else:  # no_one
+        else:
             return False
