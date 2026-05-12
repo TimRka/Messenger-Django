@@ -75,27 +75,25 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:user_search' %}">
-                                Поиск
-                            </a>
+                            <a class="nav-link" href="{% url 'users:user_search' %}">Поиск</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:profile' %}">
+                            <a class="nav-link d-flex align-items-center gap-2" href="{% url 'users:profile' %}">
                                 {% if user.avatar %}
                                     <img src="{{ user.avatar.url }}" alt="avatar" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
                                 {% else %}
-
+                                    <span style="display: inline-block; width: 30px; height: 30px; line-height: 30px; text-align: center; background: #6c757d; border-radius: 50%;">{{ user.username|first|upper }}</span>
                                 {% endif %}
-                                {{ user.username }}
+                                <span>{{ user.username }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <form method="post" action="{% url 'users:logout' %}">
+                            <form method="post" action="{% url 'users:logout' %}" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-link nav-link">Выйти</button>
+                                <button type="submit" class="btn btn-link nav-link" style="display: inline-block;">Выйти</button>
                             </form>
                         </li>
                     {% else %}
