@@ -1,6 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, AuthenticationForm
 from .models import CustomUser
 from django import forms
+from .models import UserPreferences
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -64,3 +65,17 @@ class CustomAuthenticationForm(AuthenticationForm):
 
     class Meta:
         model = CustomUser
+        
+class UserPreferencesForm(forms.ModelForm):
+    class Meta:
+        model = UserPreferences
+        fields = ['theme', 'font_family', 'font_size']
+        widgets = {
+            'theme': forms.Select(attrs={'class': 'form-select'}),
+            'font_family': forms.Select(attrs={'class': 'form-select'}),
+            'font_size': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 14,
+                'max': 20
+            }),
+        }

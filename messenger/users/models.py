@@ -1,7 +1,43 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
+from django.conf import settings
 
+
+class UserPreferences(models.Model):
+    THEME_CHOICES = [
+        ('light', 'Светлая'),
+        ('dark', 'Тёмная'),
+        ('high_contrast', 'Высокий контраст'),
+        ('sepia', 'Сепия (для глаз)'),
+    ]
+    
+    FONT_CHOICES = [
+        ('system', 'Системный'),
+        ('sans-serif', 'Без засечек (Arial)'),
+        ('serif', 'С засечками (Georgia)'),
+        ('roboto', 'Roboto'),
+        ('inter', 'Inter'),
+        ('monospace', 'Моноширинный'),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='preferences'
+    )
+    
+    theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='light')
+    font_family = models.CharField(max_length=20, choices=FONT_CHOICES, default='system')
+    font_size = models.IntegerField(default=16, help_text="14–22 px")
+
+    class Meta:
+        verbose_name = "Настройки пользователя"
+        verbose_name_plural = "Настройки пользователей"
+
+    def __str__(self):
+        return f"Настройки {self.user}"
+    
 class CustomUser(AbstractUser):
     """
     Кастомная модель пользователя

@@ -1,10 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-bs-theme="{{ theme|default:'light' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Messenger{% endblock %}</title>
+    <title>{% block title %}Flame{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <style>
     :root {
         --dark-cherry: #801100;
@@ -16,95 +21,91 @@
     }
 
     body {
-        background-color: white;
-        color: #333;
+        font-size: {{ font_size|default:'16px' }};
+        font-family: 
+            {% if font_family == 'roboto' %}'Roboto',{% elif font_family == 'inter' %}'Inter',{% elif font_family == 'serif' %}Georgia, 'Times New Roman',{% elif font_family == 'monospace' %}'Courier New', monospace,{% else %}system-ui, -apple-system, BlinkMacSystemFont,{% endif %}
+            sans-serif;
     }
 
     .navbar {
-        background: linear-gradient(135deg, var(--dark-cherry) 0%, var(--dragon) 100%);
+        background: linear-gradient(135deg, var(--dark-cherry) 0%, var(--dragon) 100%) !important;
     }
 
-    .navbar-brand {
-        font-weight: bold;
-        color: var(--golden) !important;
+    /* ==================== ТЁМНАЯ ТЕМА ==================== */
+    [data-bs-theme="dark"] body,
+    [data-bs-theme="dark"] .card,
+    [data-bs-theme="dark"] .card-body,
+    [data-bs-theme="dark"] .dropdown-menu {
+        background-color: #121212 !important;
+        color: #e0e0e0 !important;
     }
 
-    .btn-primary {
-        background-color: var(--cadmium);
-        border-color: var(--cadmium);
+    [data-bs-theme="dark"] .text-muted,
+    [data-bs-theme="dark"] .form-label,
+    [data-bs-theme="dark"] small {
+        color: #aaaaaa !important;
     }
 
-    .btn-primary:hover {
-        background-color: var(--fire-orange);
-        border-color: var(--fire-orange);
-    }
-
-    .btn-success {
-        background-color: var(--dragon);
-        border-color: var(--dragon);
-    }
-
-    .btn-success:hover {
-        background-color: var(--bishop);
-        border-color: var(--bishop);
-    }
-
-    footer {
-        background-color: #f8f9fa !important;
-        color: #6c757d !important;
-    }
-
-    .message-mine {
-        background-color: var(--bishop) !important;  /* #D73502 */
+    /* ==================== ВЫСОКИЙ КОНТРАСТ ==================== */
+    [data-bs-theme="high_contrast"] body,
+    [data-bs-theme="high_contrast"] .card,
+    [data-bs-theme="high_contrast"] .card-body {
+        background-color: #000000 !important;
         color: #ffffff !important;
     }
 
-    .message-other {
-        background-color: #333333 !important;
-        color: #e0e0e0 !important;
+    [data-bs-theme="high_contrast"] .navbar {
+        background: linear-gradient(135deg, #000, #333) !important;
     }
-    </style>
+
+    /* ==================== СЕПИЯ ==================== */
+    [data-bs-theme="sepia"] body {
+        background-color: #f4e9d8 !important;
+        color: #3e2a1e !important;
+        filter: sepia(0.6) hue-rotate(15deg) saturate(0.85);
+    }
+
+    [data-bs-theme="sepia"] .navbar {
+        background: linear-gradient(135deg, #8c4a00, #b36b00) !important;
+    }
+</style>
+
     {% block extra_css %}{% endblock %}
 </head>
 
 <body class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #B62203 0%, #D73502 100%);">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="{% url 'chat:list' %}">Flame</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:user_search' %}">
-                                Поиск
-                            </a>
+                            <a class="nav-link" href="{% url 'users:user_search' %}">Поиск</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:profile' %}">
-                                {% if user.avatar %}
-                                    <img src="{{ user.avatar.url }}" alt="avatar" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
-                                {% else %}
 
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" alt="avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 8px;">
                                 {% endif %}
                                 {{ user.username }}
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <form method="post" action="{% url 'users:logout' %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-link nav-link">Выйти</button>
-                            </form>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}">👤 Профиль</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:settings' %}">⚙️ Настройки</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'users:logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">Выйти</button>
+                                    </form>
+                                </li>
+                            </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:login' %}">Вход</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:signup' %}">Регистрация</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Вход</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'users:signup' %}">Регистрация</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -115,24 +116,24 @@
         <div class="container mt-4">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
-            {% block content %}
-            {% endblock %}
+            {% block content %}{% endblock %}
         </div>
     </main>
 
-    <footer class="bg-light text-center text-muted py-3">
+    <footer class="bg-light text-center text-muted py-3 mt-auto">
         <div class="container">
             <small>&copy; 2026 Flame. Все права защищены.</small>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
