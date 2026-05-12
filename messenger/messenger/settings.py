@@ -20,12 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gn4wlo1e)u0v#d0as-7n(^%p!rt_va&6s%m&v_v#$fo_a^1hjl'
+SECRET_KEY = 'django-insecure-0%gd@s02goxwo48tbaud1d^gnbnx92(j!)1y8v#ckt!m3hi@)('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.56.1', '192.168.0.163', '192.168.1.66']
 
 
 # Application definition
@@ -123,8 +123,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_REDIRECT_URL = '/chats/'
 LOGOUT_REDIRECT_URL = '/'
 
-#from cryptography.fernet import Fernet
-#key = Fernet.generate_key()
-#print(key.decode())
+# from cryptography.fernet import Fernet
+# key = Fernet.generate_key()
+# print(key.decode())
 
-ENCRYPTION_KEY = b'AfB7zPCYpRobgIUXqN3pQ8URfZKDuODXbeOx0enwWwc='
+# from django.core.management.utils import get_random_secret_key
+# SECRET_KEY = get_random_secret_key()
+# print(SECRET_KEY)
+ENCRYPTION_KEY = b'OCS_w_wz-uyT5hVr7PrwCDjkSzXdkgMNscBawRlGLWU='
