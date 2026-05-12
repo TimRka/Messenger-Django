@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -129,3 +130,6 @@ LOGOUT_REDIRECT_URL = '/'
 #print(key.decode())
 
 ENCRYPTION_KEY = b'AfB7zPCYpRobgIUXqN3pQ8URfZKDuODXbeOx0enwWwc='
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
