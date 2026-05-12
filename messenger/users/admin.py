@@ -8,10 +8,11 @@ class CustomUserAdmin(UserAdmin):
     list_display = ['username', 'email', 'phone', 'is_staff']
     list_filter = ['is_staff', 'is_active', 'date_joined']
     search_fields = ['username', 'email', 'phone']
+    readonly_fields = ('last_online',)
 
     fieldsets = UserAdmin.fieldsets + (
         ('Дополнительная информация', {
-            'fields': ('phone', 'bio', 'avatar', 'birth_date', 'last_online')
+            'fields': ('phone', 'bio', 'avatar', 'birth_date')
         }),
     )
 
