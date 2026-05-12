@@ -70,14 +70,16 @@ LOGGING = {
     },
 }
 
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0%gd@s02goxwo48tbaud1d^gnbnx92(j!)1y8v#ckt!m3hi@)('
+SECRET_KEY = 'django-insecure-gn4wlo1e)u0v#d0as-7n(^%p!rt_va&6s%m&v_v#$fo_a^1hjl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.56.1', '192.168.0.163', '192.168.1.66']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -180,6 +182,8 @@ LOGOUT_REDIRECT_URL = '/'
 # key = Fernet.generate_key()
 # print(key.decode())
 
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 # from django.core.management.utils import get_random_secret_key
 # SECRET_KEY = get_random_secret_key()
 # print(SECRET_KEY)

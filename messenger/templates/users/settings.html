@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Настройки — Flame{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">⚙️ Персонализация</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Тема оформления</label>
+                        {{ form.theme }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Шрифт</label>
+                        {{ form.font_family }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Размер шрифта</label>
+                        <div class="input-group">
+                            {{ form.font_size }}
+                            <span class="input-group-text">px</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3">
+                        💾 Сохранить настройки
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

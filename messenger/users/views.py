@@ -8,6 +8,10 @@ from django.db.models import Q
 from django.http import JsonResponse
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser
+from .forms import UserPreferencesForm
+from .models import UserPreferences
+import json
+from django.http import JsonResponse
 import re
 import logging
 logger = logging.getLogger('users')
@@ -100,3 +104,35 @@ def user_search(request):
         'users': users,
     }
     return render(request, 'users/user_search.html', context)
+
+@login_required
+def settings_view(request):
+    prefs, created = UserPreferences.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        form = UserPreferencesForm(request.POST, instance=prefs)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ Настройки успешно сохранены!')
+            return redirect('users:settings')   # важно использовать users:settings
+    else:
+        form = UserPreferencesForm(instance=prefs)
+    
+    context = {'form': form}
+    return render(request, 'users/settings.html', context)
+
+
+@login_required
+def set_theme(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            theme = data.get('theme')
+            if theme in ['light', 'dark', 'fire', 'high_contrast', 'sepia']:
+                prefs = request.user.preferences
+                prefs.theme = theme
+                prefs.save()
+                return JsonResponse({'status': 'success'})
+        except:
+            pass
+    return JsonResponse({'status': 'error'}, status=400)
