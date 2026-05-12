@@ -9,6 +9,8 @@ from django.core.exceptions import ValidationError
 from .models import Chat, Message, ChatMember
 import json
 import re
+import logging
+logger = logging.getLogger('chat')
 
 User = get_user_model()
 
@@ -23,6 +25,7 @@ def create_chat(request):
         name = request.POST.get('name')
         chat = Chat.objects.create(name=name)
         ChatMember.objects.create(chat=chat, user=request.user, role='admin')
+        logger.info(f"User {request.user.username} created chat '{name}' (id={chat.id})")
         return redirect('chat:room', chat_id=chat.id)
 
     return render(request, 'chat/create_chat.html')
@@ -82,6 +85,8 @@ def add_member(request, chat_id):
             try:
                 user = User.objects.get(username=username)
                 if ChatMember.objects.filter(chat=chat, user=user).exists():
+                    logger.warning(
+                        f"Attempt to add existing member {username} to chat {chat_id} by {request.user.username}")
                     return render(request, 'chat/add_member.html', {
                         'chat': chat,
                         'error': f'Пользователь {username} уже в чате',
@@ -90,8 +95,11 @@ def add_member(request, chat_id):
                         'chat_members': chat_members
                     })
                 ChatMember.objects.create(chat=chat, user=user, role='member')
+                logger.info(f"User {request.user.username} added {username} to chat {chat_id}")
                 return redirect('chat:room', chat_id=chat.id)
             except User.DoesNotExist:
+                logger.warning(
+                    f"User {request.user.username} tried to add non-existent user '{username}' to chat {chat_id}")
                 return render(request, 'chat/add_member.html', {
                     'chat': chat,
                     'error': f'Пользователь с username "{username}" не найден',
@@ -161,10 +169,13 @@ def send_message(request, chat_id):
 
     try:
         msg = Message(chat=chat, author=request.user, text=text)
+        logger.info(f"User {request.user.username} sent message in chat {chat_id} (msg_id={msg.id})")
         msg.save()
     except ValidationError as e:
+        logger.error(f"Validation error in chat {chat_id} by {request.user.username}: {e.messages}")
         return JsonResponse({'error': e.messages[0]}, status=400)
     except Exception as e:
+        logger.exception(f"Unexpected error in send_message: {str(e)}")
         return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({

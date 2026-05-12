@@ -9,6 +9,8 @@ from django.http import JsonResponse
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser
 import re
+import logging
+logger = logging.getLogger('users')
 
 
 class SignUpView(CreateView):
@@ -18,8 +20,12 @@ class SignUpView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        logger.info(f"New user registered: {self.object.username} (id={self.object.id})")
         return response
 
+    def form_invalid(self, form):
+        logger.warning(f"Registration failed: {form.errors}")
+        return super().form_invalid(form)
 
 @login_required
 def profile_view(request, username=None):
@@ -43,17 +49,19 @@ def profile_edit_view(request):
         form = CustomUserChangeForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
+            logger.info(f"User {request.user.username} updated profile")
             messages.success(request, 'Профиль успешно обновлен!')
             return redirect('users:profile')
     else:
         form = CustomUserChangeForm(instance=request.user)
-
+        logger.warning(f"User {request.user.username} profile edit failed: {form.errors}")
     return render(request, 'users/profile_edit.html', {'form': form})
 
 
 @login_required
 def user_search(request):
     search_query = request.GET.get('q', '').strip()
+    logger.info(f"User {request.user.username} searched for '{search_query}'")
     users = []
 
     if search_query:
