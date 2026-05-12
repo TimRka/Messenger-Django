@@ -30,8 +30,9 @@ class ChatMember(models.Model):
 class Message(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    _text = models.TextField(db_column='text', max_length=2000)
-
+    _text = models.TextField(db_column='text')
+    created_at = models.DateTimeField(auto_now_add=True)
+    _plain_text = ''
     @property
     def text(self):
         """Дешифровка при чтении"""
@@ -54,10 +55,24 @@ class Message(models.Model):
         return f"{self.author.username}: {self.text[:20]}"
 
     def clean(self):
+
+        if hasattr(self, '_plain_text') and self._plain_text:
+            plain_text = self._plain_text
+        else:
+            plain_text = self.text
+        if not plain_text:
+            raise ValidationError('Сообщение не может быть пустым.')
+        if len(plain_text) > 2000:
+            raise ValidationError('Сообщение не может быть длиннее 2000 символов.')
+        if len(plain_text) < 1:
+            raise ValidationError('Сообщение должно содержать хотя бы 1 символ.')
+
+        # ЦЕНЗУРА
         forbidden = ['дурак', 'редиска', '67']
+        lower_text = plain_text.lower()
         for word in forbidden:
-            if word in self.text.lower():
-                raise ValidationError(f"Слово '{word}' запрещено.")
+            if word in lower_text:
+                raise ValidationError(f'Сообщение содержит запрещённое слово: {word}.')
 
     def save(self, *args, **kwargs):
         self.full_clean()

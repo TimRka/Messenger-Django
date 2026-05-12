@@ -63,22 +63,32 @@
     }
 
     function sendMessage() {
-        const input = document.getElementById('message-input');
-        const text = input.value.trim();
-        if (!text) return;
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+    if (!text) return;
 
-        fetch(`{% url 'chat:send' chat.id %}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({text: text})
-        }).then(() => {
-            input.value = '';
-            loadMessages();
-        });
-    }
+    fetch(`{% url 'chat:send' chat.id %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({text: text})
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.error); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        input.value = '';
+        loadMessages();
+    })
+    .catch(error => {
+        alert('Ошибка: ' + error.message);
+    });
+}
 
     function handleKeyPress(event) {
         if (event.key === 'Enter') sendMessage();

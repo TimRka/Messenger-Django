@@ -43,20 +43,6 @@ class CustomUserChangeForm(UserChangeForm):
         self.fields['phone_privacy'].widget.attrs.update({'class': 'form-select'})
         self.fields['phone_privacy'].label = 'Кто может видеть ваш номер телефона'
 
-    def clean_phone(self):
-        phone = self.cleaned_data.get('phone')
-        if phone:
-            import re
-            digits = re.sub(r'\D', '', phone)
-            if len(digits) == 10:
-                phone = f'+7{digits}'
-            elif len(digits) == 11 and digits.startswith('7'):
-                phone = f'+{digits}'
-            elif len(digits) == 11 and digits.startswith('8'):
-                phone = f'+7{digits[1:]}'
-            else:
-                raise forms.ValidationError('Неверный формат телефона. Используйте +7XXXXXXXXXX')
-        return phone
 
 
 class CustomAuthenticationForm(AuthenticationForm):

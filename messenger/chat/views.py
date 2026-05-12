@@ -5,9 +5,10 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from .models import Chat, Message, ChatMember
 import json
-import re  # Добавлен импорт re
+import re
 
 User = get_user_model()
 
@@ -158,9 +159,11 @@ def send_message(request, chat_id):
     if not text:
         return JsonResponse({'error': 'Message cannot be empty'}, status=400)
 
-    msg = Message(chat=chat, author=request.user, text=text)
     try:
+        msg = Message(chat=chat, author=request.user, text=text)
         msg.save()
+    except ValidationError as e:
+        return JsonResponse({'error': e.messages[0]}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 

@@ -1,7 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
-
+from django.core.exceptions import ValidationError
+from datetime import date
 class CustomUser(AbstractUser):
     """
     Кастомная модель пользователя
@@ -16,6 +17,7 @@ class CustomUser(AbstractUser):
     phone = models.CharField(
         max_length=20,
         blank=True,
+        unique=True,
         null=True,
         verbose_name='Телефон'
     )
@@ -82,3 +84,33 @@ class CustomUser(AbstractUser):
             return ChatMember.objects.filter(chat_id__in=user_chats, user=self).exists()
         else:
             return False
+
+    def clean(self):
+        super().clean()
+        # 1
+        if self.email:
+            if '@' not in self.email or '.' not in self.email.split('@')[-1]:
+                raise ValidationError({'email': 'Введите корректный email адрес.'})
+        # 2
+        if self.phone:
+            import re
+            digits = re.sub(r'\D', '', self.phone)
+            if len(digits) == 10:
+                normalized = f'+7{digits}'
+            elif len(digits) == 11 and digits.startswith('7'):
+                normalized = f'+{digits}'
+            elif len(digits) == 11 and digits.startswith('8'):
+                normalized = f'+7{digits[1:]}'
+            else:
+                raise ValidationError({'phone': 'Неверный формат телефона. Используйте +7XXXXXXXXXX'})
+            self.phone = normalized
+        # 3
+        if self.birth_date and self.birth_date > date.today():
+            raise ValidationError({'birth_date': 'Дата рождения не может быть в будущем.'})
+        # 4
+        if self.bio and len(self.bio) > 300:
+            raise ValidationError({'bio': 'Bio не может быть длиннее 300 символов.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
