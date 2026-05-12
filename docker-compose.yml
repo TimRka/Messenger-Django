@@ -1,0 +1,10 @@
+version: '3.9'
+
+services:
+
+  messenger:
+    build: ./messenger
+    container_name: messenger
+    ports:
+      - "8000:8000"
+

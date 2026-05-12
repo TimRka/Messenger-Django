@@ -30,7 +30,7 @@ class ChatMember(models.Model):
 class Message(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    _text = models.TextField(db_column='text')
+    _text = models.TextField(db_column='text', max_length=2000)
 
     @property
     def text(self):
@@ -54,7 +54,7 @@ class Message(models.Model):
         return f"{self.author.username}: {self.text[:20]}"
 
     def clean(self):
-        forbidden = ['дурак', 'редиска']
+        forbidden = ['дурак', 'редиска', '67']
         for word in forbidden:
             if word in self.text.lower():
                 raise ValidationError(f"Слово '{word}' запрещено.")
