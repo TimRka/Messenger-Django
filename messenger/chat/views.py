@@ -13,7 +13,7 @@ User = get_user_model()
 
 @login_required
 def chat_list(request):
-    user_chats = Chat.objects.filter(chatmember__user=request.user)
+    user_chats = Chat.objects.filter(chatmember__user=request.user).prefetch_related('chatmember_set__user')
     return render(request, 'chat/chat_list.html', {'chats': user_chats})
 
 @login_required

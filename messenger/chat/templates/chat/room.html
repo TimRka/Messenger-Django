@@ -3,6 +3,15 @@
 {% if is_admin %}
     <a href="{% url 'chat:add_member' chat.id %}" class="btn btn-sm btn-secondary mb-2">+ Добавить участника</a>
 {% endif %}
+<div class="mb-3">
+    <strong>Участники:</strong>
+    <div class="d-flex flex-wrap gap-2 mt-1">
+        {% for member in chat.chatmember_set.all %}
+            <span class="badge bg-secondary">{{ member.user.username }}</span>
+        {% endfor %}
+    </div>
+</div>
+
 <div class="card" style="height: 70vh;">
     <div class="card-body overflow-auto" id="messages" style="display: flex; flex-direction: column; gap: 10px;">
     </div>

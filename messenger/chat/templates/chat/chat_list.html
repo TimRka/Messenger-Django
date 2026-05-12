@@ -9,12 +9,21 @@
     {% if chats %}
         <div class="list-group">
             {% for chat in chats %}
-                <a href="{% url 'chat:room' chat.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                    <div>
+                <a href="{% url 'chat:room' chat.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
                         <strong>{{ chat.name }}</strong>
-                        <small class="text-muted d-block">Создан: {{ chat.created_at|date:"d.m.Y" }}</small>
+                        <small class="text-muted">{{ chat.created_at|date:"d.m.Y" }}</small>
                     </div>
-                    <span class="badge bg-secondary rounded-pill">{{ chat.chatmember_set.count }}</span>
+                    <div class="mt-1">
+                        <small class="text-muted">Участники:</small>
+                        <small>
+                            {% for member in chat.chatmember_set.all %}
+                                {{ member.user.username }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                —
+                            {% endfor %}
+                        </small>
+                    </div>
                 </a>
             {% endfor %}
         </div>
