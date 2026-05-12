@@ -1,20 +1,21 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
-from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.contrib import messages
-from .models import Chat, Message, ChatMember
+from .models import Chat, Message, ChatMember, Attachment
 import json
-import re  # Добавлен импорт re
+import re
 
 User = get_user_model()
+
 
 @login_required
 def chat_list(request):
     user_chats = Chat.objects.filter(chatmember__user=request.user)
     return render(request, 'chat/chat_list.html', {'chats': user_chats})
+
 
 @login_required
 def create_chat(request):
@@ -25,7 +26,6 @@ def create_chat(request):
         return redirect('chat:room', chat_id=chat.id)
 
     return render(request, 'chat/create_chat.html')
-
 
 
 @login_required
@@ -120,6 +120,7 @@ def chat_room(request, chat_id):
         'is_admin': is_admin
     })
 
+
 @login_required
 @require_http_methods(["GET"])
 def get_messages(request, chat_id):
@@ -128,48 +129,75 @@ def get_messages(request, chat_id):
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     after_id = request.GET.get('after')
-    messages_qs = chat.messages.select_related('author').order_by('id')
+    messages_qs = chat.messages.select_related('author').prefetch_related('attachments').order_by('id')
+    
     if after_id:
         messages_qs = messages_qs.filter(id__gt=after_id)
+    
     messages_qs = messages_qs[:100]
 
-    data = [{
-        'id': m.id,
-        'author': m.author.username,
-        'text': m.text,
-        'created_at': m.created_at.isoformat(),
-    } for m in messages_qs]
+    data = []
+    for m in messages_qs:
+        attachments = []
+        for att in m.attachments.all():
+            attachments.append({
+                'id': att.id,
+                'file_url': att.file.url,
+                'file_type': att.file_type,
+                'original_name': att.original_name,
+            })
+
+        data.append({
+            'id': m.id,
+            'author': m.author.username,
+            'text': m.text,
+            'created_at': m.created_at.isoformat(),
+            'attachments': attachments,
+            'is_read': m.is_read,
+        })
+
     return JsonResponse({'messages': data})
+
 
 @login_required
 @require_http_methods(["POST"])
-@ensure_csrf_cookie
 def send_message(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
     if not ChatMember.objects.filter(chat=chat, user=request.user).exists():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    try:
-        data = json.loads(request.body)
-        text = data.get('text', '').strip()
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    text = request.POST.get('text', '').strip()
+    files = request.FILES.getlist('files')   # поддержка нескольких файлов
 
-    if not text:
-        return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+    if not text and not files:
+        return JsonResponse({'error': 'Сообщение или файл обязателен'}, status=400)
 
-    msg = Message(chat=chat, author=request.user, text=text)
-    try:
-        msg.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+    # Создаём сообщение
+    message = Message(chat=chat, author=request.user)
+    if text:
+        message.text = text  # setter шифрует текст
+    message.save()
+
+    # Сохраняем файлы
+    for file in files:
+        attachment = Attachment(message=message, file=file)
+        attachment.save()
+
+    # Подготавливаем данные для ответа
+    attachments_data = [{
+        'id': att.id,
+        'file_url': att.file.url,
+        'file_type': att.file_type,
+        'original_name': att.original_name,
+    } for att in message.attachments.all()]
 
     return JsonResponse({
         'message': {
-            'id': msg.id,
-            'author': msg.author.username,
-            'text': msg.text,
-            'created_at': msg.created_at.isoformat(),
+            'id': message.id,
+            'author': message.author.username,
+            'text': message.text,
+            'created_at': message.created_at.isoformat(),
+            'attachments': attachments_data,
         }
     })
 
