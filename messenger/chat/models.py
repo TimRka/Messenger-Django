@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinLengthValidator, MaxLengthValidator
+from django.core.validators import MinLengthValidator, MaxLengthValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from cryptography.fernet import Fernet
 
@@ -79,9 +79,45 @@ class Message(models.Model):
         super().save(*args, **kwargs)
 
 class Attachment(models.Model):
+    FILE_TYPE_CHOICES = [
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('document', 'Document'),
+    ]
+
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='attachments/')
+    file = models.FileField(
+        upload_to='attachments/%Y/%m/%d/',
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'webp',
+                                  'mp4', 'webm', 'mov', 'mp3', 'wav', 'ogg', 'm4a',
+                                  'pdf', 'doc', 'docx', 'txt', 'zip'])
+        ]
+    )
+    file_type = models.CharField(max_length=20, choices=FILE_TYPE_CHOICES, blank=True)
+    original_name = models.CharField(max_length=255, blank=True)  # сохраняем оригинальное имя
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        # Автоматическое определение типа файла
+        if self.file and not self.file_type:
+            filename = self.file.name.lower()
+            if any(ext in filename for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                self.file_type = 'image'
+            elif any(ext in filename for ext in ['.mp4', '.webm', '.mov']):
+                self.file_type = 'video'
+            elif any(ext in filename for ext in ['.mp3', '.wav', '.ogg', '.m4a']):
+                self.file_type = 'audio'
+            else:
+                self.file_type = 'document'
+
+        # Сохраняем оригинальное имя файла
+        if self.file and not self.original_name:
+            self.original_name = self.file.name.split('/')[-1]
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"Attachment to {self.message.id}"
+        return f"{self.file_type} to message {self.message.id}"

@@ -137,17 +137,32 @@ def get_messages(request, chat_id):
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     after_id = request.GET.get('after')
-    messages_qs = chat.messages.select_related('author').order_by('id')
+    messages_qs = chat.messages.select_related('author').prefetch_related('attachments').order_by('id')
+
     if after_id:
         messages_qs = messages_qs.filter(id__gt=after_id)
     messages_qs = messages_qs[:100]
 
-    data = [{
-        'id': m.id,
-        'author': m.author.username,
-        'text': m.text,
-        'created_at': m.created_at.isoformat(),
-    } for m in messages_qs]
+    data = []
+    for m in messages_qs:
+        attachments = []
+        for att in m.attachments.all():
+            attachments.append({
+                'id': att.id,
+                'file_url': att.file.url,
+                'file_type': att.file_type,
+                'original_name': att.original_name,
+            })
+
+        data.append({
+            'id': m.id,
+            'author': m.author.username,
+            'text': m.text,
+            'created_at': m.created_at.isoformat(),
+            'attachments': attachments,
+            'is_read': m.is_read,
+        })
+
     return JsonResponse({'messages': data})
 
 @login_required
@@ -158,14 +173,17 @@ def send_message(request, chat_id):
     if not ChatMember.objects.filter(chat=chat, user=request.user).exists():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
-    try:
-        data = json.loads(request.body)
-        text = data.get('text', '').strip()
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    text = request.POST.get('text', '').strip()
+    files = request.FILES.getlist('files')   # поддержка нескольких файлов
 
-    if not text:
-        return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+    if not text and not files:
+        return JsonResponse({'error': 'Сообщение или файл обязателен'}, status=400)
+
+    # Создаём сообщение
+    message = Message(chat=chat, author=request.user)
+    if text:
+        message.text = text  # setter шифрует текст
+    message.save()
 
     try:
         msg = Message(chat=chat, author=request.user, text=text)
@@ -177,13 +195,26 @@ def send_message(request, chat_id):
     except Exception as e:
         logger.exception(f"Unexpected error in send_message: {str(e)}")
         return JsonResponse({'error': str(e)}, status=400)
+    # Сохраняем файлы
+    for file in files:
+        attachment = Attachment(message=message, file=file)
+        attachment.save()
+
+    # Подготавливаем данные для ответа
+    attachments_data = [{
+        'id': att.id,
+        'file_url': att.file.url,
+        'file_type': att.file_type,
+        'original_name': att.original_name,
+    } for att in message.attachments.all()]
 
     return JsonResponse({
         'message': {
-            'id': msg.id,
-            'author': msg.author.username,
-            'text': msg.text,
-            'created_at': msg.created_at.isoformat(),
+            'id': message.id,
+            'author': message.author.username,
+            'text': message.text,
+            'created_at': message.created_at.isoformat(),
+            'attachments': attachments_data,
         }
     })
 

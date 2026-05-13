@@ -15,57 +15,172 @@
 <div class="card" style="height: 70vh;">
     <div class="card-body overflow-auto" id="messages" style="display: flex; flex-direction: column; gap: 10px;">
     </div>
-    <div class="card-footer">
-        <div class="input-group">
-            <input type="text" class="form-control" id="message-input" placeholder="Введите сообщение..." onkeypress="handleKeyPress(event)">
-            <button class="btn btn-primary" onclick="sendMessage()">Отправить</button>
-        </div>
+
+    <div class="messages-container" id="messages-container">
+        <div id="messages-list" class="messages-list"></div>
     </div>
+
+    <form id="message-form" class="message-form" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="input-area">
+            <textarea id="text-input" placeholder="Сообщение..." rows="1"></textarea>
+
+            <label for="file-input" class="attach-label">📎</label>
+            <input type="file" id="file-input" multiple style="display:none;">
+
+            <button type="submit" class="send-button">➤</button>
+        </div>
+
+        <!-- Блок предпросмотра файлов -->
+        <div id="selected-files" class="selected-files"></div>
+    </form>
 </div>
 
+<style>
+.chat-page { display: flex; flex-direction: column; height: 100vh; background: #0f0f0f; color: white; }
+.chat-header { padding: 15px; background: #1f1f1f; display: flex; align-items: center; gap: 10px; }
+.messages-container { flex: 1; overflow-y: auto; padding: 15px; }
+.messages-list { display: flex; flex-direction: column; gap: 12px; }
+
+.message { max-width: 75%; padding: 10px 14px; border-radius: 18px; position: relative; word-break: break-word; }
+.message.sent { background: #248bf5; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.message.received { background: #2a2a2a; color: white; align-self: flex-start; border-bottom-left-radius: 4px; }
+
+.message img, .message video, .message audio { max-width: 300px; border-radius: 12px; margin: 8px 0; display: block; }
+
+.input-area { display: flex; padding: 10px; background: #1f1f1f; gap: 8px; align-items: end; }
+#text-input { flex: 1; resize: none; max-height: 120px; background: #333; color: white; border: none; border-radius: 20px; padding: 10px; }
+.send-button, .attach-label { padding: 12px 16px; background: #248bf5; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 18px; }
+
+.selected-files { padding: 8px 15px; background: #1f1f1f; display: flex; flex-wrap: wrap; gap: 8px; }
+.file-preview-item {
+    display: inline-flex;
+    align-items: center;
+    background: #333;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    max-width: 180px;
+}
+.file-preview-item img {
+    max-height: 70px;
+    border-radius: 6px;
+    margin-right: 8px;
+}
+.file-preview-item button {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 6px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
     const currentUser = "{{ request.user.username }}";
     let lastMessageId = 0;
+    const chatId = {{ chat.id }};
+    let selectedFiles = [];
 
-    function formatTime(isoString) {
-        const date = new Date(isoString);
-        return date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+    // ========== ПРЕДПРОСМОТР ФАЙЛОВ ==========
+    function updateFilePreview() {
+        const container = document.getElementById('selected-files');
+        container.innerHTML = '';
+
+        selectedFiles.forEach((file, index) => {
+            const div = document.createElement('div');
+            div.className = 'file-preview-item';
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                div.appendChild(img);
+            } else {
+                div.textContent = `📎 ${file.name}`;
+            }
+
+            // Кнопка удаления
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = '✕';
+            removeBtn.onclick = () => {
+                selectedFiles.splice(index, 1);
+                updateFilePreview();
+            };
+            div.appendChild(removeBtn);
+
+            container.appendChild(div);
+        });
     }
 
-    function renderMessage(msg) {
-        const isMine = msg.author === currentUser;
-        const div = document.createElement('div');
-        div.className = `d-flex ${isMine ? 'justify-content-end' : 'justify-content-start'}`;
+    // Выбор файлов
+    document.getElementById('file-input').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            selectedFiles = [...selectedFiles, ...Array.from(e.target.files)];
+            updateFilePreview();
+        }
+    });
 
-        div.innerHTML = `
-            <div class="${isMine ? 'message-mine' : 'message-other'} rounded p-2" style="max-width: 60%;">
-                ${!isMine ? `<div class="fw-bold small">${msg.author}</div>` : ''}
-                <div>${msg.text}</div>
-                <div class="small text-end mt-1">${formatTime(msg.created_at)}</div>
-            </div>
-        `;
-        return div;
-    }
+    // ========== ЗАГРУЗКА СООБЩЕНИЙ ==========
+    async function loadMessages() {
+        try {
+            const res = await fetch(`/chats/${chatId}/messages/?after=${lastMessageId}`);
+            const data = await res.json();
 
-    function loadMessages() {
-        fetch(`{% url 'chat:messages' chat.id %}?after=${lastMessageId}`)
-            .then(r => r.json())
-            .then(data => {
-                const container = document.getElementById('messages');
-                data.messages.forEach(msg => {
-                    container.appendChild(renderMessage(msg));
-                    if (msg.id > lastMessageId) lastMessageId = msg.id;
-                });
-                if (data.messages.length) {
-                    container.scrollTop = container.scrollHeight;
+            const container = document.getElementById('messages-list');
+
+            data.messages.forEach(msg => {
+                if (msg.id <= lastMessageId) return;
+
+                const div = document.createElement('div');
+                div.className = `message ${msg.author === '{{ request.user.username }}' ? 'sent' : 'received'}`;
+
+                let html = `
+                    <strong>${msg.author}</strong>
+                    <small>${new Date(msg.created_at).toLocaleTimeString('ru-RU')}</small>
+                    ${msg.text ? `<p>${msg.text}</p>` : ''}
+                `;
+
+                if (msg.attachments && msg.attachments.length > 0) {
+                    msg.attachments.forEach(att => {
+                        if (att.file_type === 'image') {
+                            html += `<a href="${att.file_url}" target="_blank"><img src="${att.file_url}" alt=""></a>`;
+                        } else if (att.file_type === 'video') {
+                            html += `<video controls><source src="${att.file_url}" type="video/mp4"></video>`;
+                        } else if (att.file_type === 'audio') {
+                            html += `<audio controls><source src="${att.file_url}"></audio>`;
+                        } else {
+                            html += `<a href="${att.file_url}" download="${att.original_name}" class="file-link">📎 ${att.original_name}</a>`;
+                        }
+                    });
                 }
+
+                div.innerHTML = html;
+                container.appendChild(div);
+                lastMessageId = Math.max(lastMessageId, msg.id);
             });
+
+            container.scrollTop = container.scrollHeight;
+        } catch (e) {
+            console.error('Error loading messages:', e);
+        }
     }
 
     function sendMessage() {
     const input = document.getElementById('message-input');
     const text = input.value.trim();
     if (!text) return;
+    // ========== ОТПРАВКА ==========
+    document.getElementById('message-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const text = document.getElementById('text-input').value.trim();
 
     fetch(`{% url 'chat:send' chat.id %}`, {
         method: 'POST',
@@ -93,6 +208,37 @@
     function handleKeyPress(event) {
         if (event.key === 'Enter') sendMessage();
     }
+        if (!text && selectedFiles.length === 0) return;
+
+        const formData = new FormData();
+        if (text) formData.append('text', text);
+
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        try {
+            const res = await fetch(`/chats/${chatId}/send/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            if (res.ok) {
+                // Очистка формы
+                document.getElementById('text-input').value = '';
+                selectedFiles = [];
+                document.getElementById('selected-files').innerHTML = '';
+                document.getElementById('file-input').value = '';
+
+                loadMessages();
+            }
+        } catch (e) {
+            console.error('Error sending:', e);
+        }
+    });
 
     setInterval(loadMessages, 2000);
     loadMessages();
