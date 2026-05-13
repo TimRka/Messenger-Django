@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from .models import Chat, Message, ChatMember
+from .models import Chat, Message, ChatMember, Attachment
 import json
 import re
 import logging
@@ -169,55 +169,45 @@ def get_messages(request, chat_id):
 @require_http_methods(["POST"])
 @ensure_csrf_cookie
 def send_message(request, chat_id):
-    chat = get_object_or_404(Chat, id=chat_id)
-    if not ChatMember.objects.filter(chat=chat, user=request.user).exists():
-        return JsonResponse({'error': 'Access denied'}, status=403)
-
-    text = request.POST.get('text', '').strip()
-    files = request.FILES.getlist('files')   # поддержка нескольких файлов
-
-    if not text and not files:
-        return JsonResponse({'error': 'Сообщение или файл обязателен'}, status=400)
-
-    # Создаём сообщение
-    message = Message(chat=chat, author=request.user)
-    if text:
-        message.text = text  # setter шифрует текст
-    message.save()
-
     try:
-        msg = Message(chat=chat, author=request.user, text=text)
-        logger.info(f"User {request.user.username} sent message in chat {chat_id} (msg_id={msg.id})")
-        msg.save()
+        chat = get_object_or_404(Chat, id=chat_id)
+        if not ChatMember.objects.filter(chat=chat, user=request.user).exists():
+            return JsonResponse({'error': 'Access denied'}, status=403)
+
+        text = request.POST.get('text', '').strip()
+        files = request.FILES.getlist('files')
+
+        if not text and not files:
+            return JsonResponse({'error': 'Сообщение или файл обязателен'}, status=400)
+
+        message = Message(chat=chat, author=request.user)
+        if text:
+            message.text = text
+        message.save()  # здесь сработает валидация
+
+        for f in files:
+            Attachment(message=message, file=f).save()
+
+        attachments_data = [{
+            'id': att.id,
+            'file_url': att.file.url,
+            'file_type': att.file_type,
+            'original_name': att.original_name,
+        } for att in message.attachments.all()]
+
+        return JsonResponse({
+            'message': {
+                'id': message.id,
+                'author': message.author.username,
+                'text': message.text,
+                'created_at': message.created_at.isoformat(),
+                'attachments': attachments_data,
+            }
+        })
     except ValidationError as e:
-        logger.error(f"Validation error in chat {chat_id} by {request.user.username}: {e.messages}")
         return JsonResponse({'error': e.messages[0]}, status=400)
     except Exception as e:
-        logger.exception(f"Unexpected error in send_message: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=400)
-    # Сохраняем файлы
-    for file in files:
-        attachment = Attachment(message=message, file=file)
-        attachment.save()
-
-    # Подготавливаем данные для ответа
-    attachments_data = [{
-        'id': att.id,
-        'file_url': att.file.url,
-        'file_type': att.file_type,
-        'original_name': att.original_name,
-    } for att in message.attachments.all()]
-
-    return JsonResponse({
-        'message': {
-            'id': message.id,
-            'author': message.author.username,
-            'text': message.text,
-            'created_at': message.created_at.isoformat(),
-            'attachments': attachments_data,
-        }
-    })
-
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
 def create_direct_chat(request, user_id):
