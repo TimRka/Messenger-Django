@@ -7,4 +7,3 @@ services:
     container_name: messenger
     ports:
       - "8000:8000"
-
