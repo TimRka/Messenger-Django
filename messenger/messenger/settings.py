@@ -77,7 +77,7 @@ LOGGING = {
 SECRET_KEY = 'django-insecure-gn4wlo1e)u0v#d0as-7n(^%p!rt_va&6s%m&v_v#$fo_a^1hjl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -117,6 +117,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.user_preferences',
             ],
         },
     },
@@ -187,4 +188,4 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 # from django.core.management.utils import get_random_secret_key
 # SECRET_KEY = get_random_secret_key()
 # print(SECRET_KEY)
-ENCRYPTION_KEY = b'OCS_w_wz-uyT5hVr7PrwCDjkSzXdkgMNscBawRlGLWU='
+ENCRYPTION_KEY = b'Jj_ppkNjzw4Gtem0MKTCvi25EAPWZyr5h8Mc62_n1-s='

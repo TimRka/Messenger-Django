@@ -26,6 +26,11 @@
             sans-serif;
     }
 
+    footer {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    }
+
     .navbar {
         background: linear-gradient(135deg, var(--dark-cherry) 0%, var(--dragon) 100%);
     }
@@ -60,8 +65,31 @@
     [data-bs-theme="dark"] .card,
     [data-bs-theme="dark"] .card-body,
     [data-bs-theme="dark"] .dropdown-menu {
-        background-color: #121212 !important;
+        background-color: #1a1a1a !important;
         color: #e0e0e0 !important;
+    }
+    [data-bs-theme="dark"] footer {
+    background-color: #121212;
+    color: #aaaaaa;
+    }
+    [data-bs-theme="dark"] .navbar {
+    background: linear-gradient(135deg, var(--dragon) 0%, var(--bishop) 100%) !important;
+    }
+
+    [data-bs-theme="dark"] .btn-primary {
+        background-color: var(--cadmium);
+        border-color: var(--cadmium);
+    }
+    [data-bs-theme="dark"] .btn-primary:hover {
+        background-color: var(--fire-orange);
+    }
+
+    [data-bs-theme="dark"] .btn-success {
+        background-color: var(--dragon);
+        border-color: var(--dragon);
+    }
+    [data-bs-theme="dark"] .btn-success:hover {
+        background-color: var(--bishop);
     }
 
     [data-bs-theme="dark"] .text-muted,
@@ -70,27 +98,132 @@
         color: #aaaaaa !important;
     }
 
-    /*  ВЫСОКИЙ КОНТРАСТ */
-    [data-bs-theme="high_contrast"] body,
-    [data-bs-theme="high_contrast"] .card,
-    [data-bs-theme="high_contrast"] .card-body {
-        background-color: #000000 !important;
-        color: #ffffff !important;
+    [data-bs-theme="dark"] a:not(.btn) {
+        color: var(--golden);
     }
 
-    [data-bs-theme="high_contrast"] .navbar {
-        background: linear-gradient(135deg, #000, #333) !important;
+        /* FIRE  */
+    [data-bs-theme="fire"] body {
+        background: linear-gradient(135deg, #2a0a00, #4a1500, #6b2000);
+        background-size: 200% 200%;
+        animation: fireGradient 12s ease infinite;
+        color: #ffe0b3;
+    }
+    @keyframes fireGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
+    [data-bs-theme="fire"] .card {
+    background: linear-gradient(135deg, #2c0e00, #4a1a00);
+    transition: background 0.5s;
+    }
+    [data-bs-theme="fire"] .card-body,
+    [data-bs-theme="fire"] .dropdown-menu {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(2px);
+        color: #ffd9a5;
+    }
+    [data-bs-theme="fire"] footer {
+    background: linear-gradient(135deg, #2a0a00, #4a1500);
+    color: #ffd9a5;
+    border-top: 1px solid #ff8c00;
+    }
+    [data-bs-theme="fire"] .navbar {
+    background: linear-gradient(135deg, #ff4500, #ff8c00, #ffd700);
+    background-size: 200% 200%;
+    animation: fireNav 3s ease infinite;
+    }
+    @keyframes fireNav {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    [data-bs-theme="fire"] .btn-primary {
+        background: linear-gradient(135deg, #ff6600, #ff3300);
+        border: none;
+    }
+    [data-bs-theme="fire"] .btn-primary:hover {
+        background: linear-gradient(135deg, #ff8800, #ff5500);
+    }
+
+    [data-bs-theme="fire"] .btn-success {
+        background: linear-gradient(135deg, #cc5500, #aa3300);
+        border: none;
+    }
+    [data-bs-theme="fire"] .btn-success:hover {
+        background: linear-gradient(135deg, #dd6600, #bb4400);
+    }
+
+    [data-bs-theme="fire"] .message-mine {
+        background: linear-gradient(135deg, #ff8c00, #ff4500) !important;
+        color: #fff8e7 !important;
+    }
+    [data-bs-theme="fire"] .message-other {
+        background-color: rgba(0, 0, 0, 0.7) !important;
+        border: 1px solid #ff8c00 !important;
+        color: #ffe0b3 !important;
+    }
+
+    [data-bs-theme="fire"] a:not(.btn) {
+        color: #ffb347;
+    }
+    [data-bs-theme="fire"] a:not(.btn):hover {
+        color: #ffdd99;
+    }
+    [data-bs-theme="fire"] .card-header,
+    [data-bs-theme="fire"] .card-header h3,
+    [data-bs-theme="fire"] .card-header h4 {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        color: #ffd9a5 !important;
+        border-bottom-color: #ff8c00 !important;
+    }
+
+    [data-bs-theme="fire"] .table,
+    [data-bs-theme="fire"] .table th,
+    [data-bs-theme="fire"] .table td {
+        background-color: transparent !important;
+        color: #ffe0b3 !important;
+        border-color: #ff8c40 !important;
+    }
+
+    [data-bs-theme="fire"] .alert-info {
+        background-color: rgba(0, 0, 0, 0.6);
+        color: #ffd9a5;
+        border-color: #ff8c00;
+    }
     /* СЕПИЯ  */
     [data-bs-theme="sepia"] body {
         background-color: #f4e9d8 !important;
         color: #3e2a1e !important;
         filter: sepia(0.6) hue-rotate(15deg) saturate(0.85);
     }
-
+    [data-bs-theme="sepia"] footer {
+    background-color: #d9c5a7;
+    color: #5a3e1b;
+    }
     [data-bs-theme="sepia"] .navbar {
         background: linear-gradient(135deg, #8c4a00, #b36b00) !important;
+    }
+        /* Сообщения в чате */
+    .message-mine {
+        background-color: var(--cadmium) !important;
+        color: white !important;
+    }
+    .message-other {
+        background-color: #4a4a4a !important;
+        color: #f0f0f0 !important;
+        border: 1px solid var(--bishop) !important;
+    }
+    .message-mine .small,
+    .message-other .small {
+        color: rgba(255,255,255,0.7) !important;
+    }
+    /* Размер текста сообщений */
+    .message-mine, .message-other {
+        font-size: 0.95rem;
     }
 </style>
 
@@ -149,7 +282,7 @@
         </div>
     </main>
 
-    <footer class="bg-light text-center text-muted py-3">
+    <footer class="text-center py-3">
         <div class="container">
             <small>&copy; 2026 Flame. Все права защищены.</small>
         </div>

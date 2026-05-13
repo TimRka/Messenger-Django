@@ -124,14 +124,14 @@ class UserPreferences(models.Model):
     THEME_CHOICES = [
         ('light', 'Светлая'),
         ('dark', 'Тёмная'),
-        ('high_contrast', 'Высокий контраст'),
-        ('sepia', 'Сепия (для глаз)'),
+        ('fire', 'Пламя'),
+        ('sepia', 'Сепия'),
     ]
 
     FONT_CHOICES = [
         ('system', 'Системный'),
-        ('sans-serif', 'Без засечек (Arial)'),
-        ('serif', 'С засечками (Georgia)'),
+        ('sans-serif', 'Arial'),
+        ('serif', 'Georgia'),
         ('roboto', 'Roboto'),
         ('inter', 'Inter'),
         ('monospace', 'Моноширинный'),

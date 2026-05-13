@@ -20,7 +20,7 @@ logger = logging.getLogger('users')
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('users:login')
-    template_name = 'registration/signup.html'
+    template_name = 'users/signup.html'
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -113,8 +113,8 @@ def settings_view(request):
         form = UserPreferencesForm(request.POST, instance=prefs)
         if form.is_valid():
             form.save()
-            messages.success(request, '✅ Настройки успешно сохранены!')
-            return redirect('users:settings')   # важно использовать users:settings
+            messages.success(request, 'Настройки успешно сохранены!')
+            return redirect('users:settings')
     else:
         form = UserPreferencesForm(instance=prefs)
     

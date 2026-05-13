@@ -20,6 +20,7 @@
 
                     {% if request.user == user %}
                         <a href="{% url 'users:profile_edit' %}" class="btn btn-primary mt-3">Редактировать профиль</a>
+                        <a href="{% url 'users:settings' %}" class="btn btn-secondary mt-3">Персонализация</a>
                     {% else %}
                         <a href="{% url 'chat:create_direct' user.id %}" class="btn btn-primary mt-3">Написать сообщение</a>
                     {% endif %}
@@ -137,7 +138,7 @@
                     <!-- Отображаем настройки приватности текущего пользователя -->
                     {% if request.user == user %}
                         <div class="alert alert-info mt-3">
-                            <strong>ℹВаши настройки приватности:</strong><br>
+                            <strong>Ваши настройки приватности:</strong><br>
                             Email: <strong>{{ user.get_email_privacy_display }}</strong><br>
                             Телефон: <strong>{{ user.get_phone_privacy_display }}</strong>
                         </div>
