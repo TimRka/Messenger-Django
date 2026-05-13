@@ -26,19 +26,13 @@ class UserModelTest(TestCase):
         self.assertEqual(str(user), 'testuser')
 
     def test_user_requires_email(self):
-        # email обязателен? В модели есть unique=True, но blank=False, по умолчанию required.
-        # Попробуем создать без email
         with self.assertRaises(Exception):
             User.objects.create_user(username='noemail', password='pass', email=None)
 
     def test_phone_normalization(self):
-        # если в модели есть clean() или сохранение с нормализацией
         user = User.objects.create_user(username='phoneuser', email='p@u.com', password='pass')
         user.phone = '89123456789'
         user.save()
-        # предполагаем, что clean нормализует в +79123456789
-        # если нет нормализации, этот тест может упасть – пропусти или реализуй
-        # self.assertEqual(user.phone, '+79123456789')
         pass
 
 
@@ -107,8 +101,7 @@ class UserViewsTest(TestCase):
     def test_profile_view_requires_login(self):
         # анонимный доступ – редирект на login
         response = self.client.get(self.profile_url)
-        # Поскольку в urls.py нет @login_required для profile_view (она есть, но поставим проверку)
-        # Если используется @login_required, то редирект на login с next
+        # используется @login_required, редирект на login
         self.assertRedirects(response, f'{reverse("users:login")}?next={self.profile_url}')
 
     def test_profile_view_authenticated(self):
