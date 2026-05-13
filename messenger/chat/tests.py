@@ -32,7 +32,7 @@ class ChatModelTest(TestCase):
         self.assertEqual(str(msg), 'user1: Hello')
 
     def test_message_validation_forbidden_words(self):
-        # Проверка, что модель запрещает слова
+        # Проверк а, что модель запрещает слова
         msg = Message(chat=self.chat, author=self.user1, text='ты редиска')
         with self.assertRaises(Exception):  # ValidationError
             msg.full_clean()
